@@ -95,11 +95,6 @@ const Genre = sequelize.define('genre', {
   },{timestamps: false})
 
 
-sequelize
-.query('SELECT * FROM films WHERE id = 7746', { raw:true })
-.then(films => {
-  console.log(films)
-})
 
 // ROUTES
 app.get('/films/:id/recommendations', getFilmRecommendations);
@@ -108,7 +103,22 @@ app.get('/', (req, res) => {
 })
 // ROUTE HANDLER
 function getFilmRecommendations(req, res) {
-  res.status(500).send('Not Implemented');
+
+  console.log(req.params.id);
+  Film.findById(req.params.id)
+    .then(data => {
+      res.json(data)
+    })
+  Film.findAll({
+    where: {
+      genre_id: 19,
+
+    }
+  })
+  .then(data => {
+    console.log('worked');
+  })
+  // res.send('hello')
 }
 
 module.exports = app;
