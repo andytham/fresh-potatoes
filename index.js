@@ -31,10 +31,76 @@ sequelize
   .authenticate()
   .then(() => {
     console.log('Connection has been established successfully.');
+    console.log(sequelize.models);
   })
   .catch(err => {
     console.error('Unable to connect to the database:', err);
   });
+// MODELS
+
+
+
+const Artist = sequelize.define('artist', {
+  id: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    primaryKey: true
+  },
+  name: Sequelize.STRING,
+  birthday: Sequelize.STRING,
+  deathday:Sequelize.STRING,
+  gender: Sequelize.INTEGER,
+  place_of_birth: Sequelize.STRING
+  },{timestamps: false})
+
+
+const Film = sequelize.define('film', {
+  id: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    primaryKey: true
+  },
+  title: Sequelize.STRING,
+  release_date: Sequelize.STRING,
+  tagline: Sequelize.STRING,
+  revenue: Sequelize.INTEGER,
+  budget: Sequelize.INTEGER,
+  runtime: Sequelize.INTEGER,
+  original_language: Sequelize.STRING,
+  status: Sequelize.STRING,
+  genre_id: Sequelize.INTEGER
+  },{timestamps: false})
+
+const ArtistFilms = sequelize.define('artist_film', {
+  id: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    primaryKey: true
+  },
+  credit_Type: Sequelize.STRING,
+  role: Sequelize.STRING,
+  description: Sequelize.STRING,
+  artist_id: Sequelize.INTEGER,
+  film_id: Sequelize.INTEGER
+
+  },{timestamps: false})
+
+const Genre = sequelize.define('genre', {
+  id: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    primaryKey: true,
+  },
+  name: Sequelize.STRING
+  },{timestamps: false})
+
+
+sequelize
+.query('SELECT * FROM films WHERE id = 7746', { raw:true })
+.then(films => {
+  console.log(films)
+})
+
 // ROUTES
 app.get('/films/:id/recommendations', getFilmRecommendations);
 app.get('/', (req, res) => {
