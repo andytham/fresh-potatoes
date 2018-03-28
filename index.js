@@ -11,7 +11,7 @@ const {
 } = process.env;
 let url = 'http://credentials-api.generalassemb.ly/4576f55f-c427-4cfc-a11c-5bfe914ca6c1'
 let errMsg = {
-  "message" : "Return an explicit error here"
+  "message" : "key missing"
 }
 
 // START SERVER
@@ -164,9 +164,10 @@ function getFilmRecommendations(req, res) {
                 if (film.averageRating >= 4 && film.reviews > 5) {
                   return film.id;
                 } else {
-                  return errorMessage;
+                  return errMsg;
                 }
                 return {
+
                   id: mapped[0].film,
                   title: film.title,
                   releaseDate: film.release_date,
