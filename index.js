@@ -100,8 +100,10 @@ const Genre = sequelize.define('genre', {
 
 // ROUTES
 app.get('/films/:id/recommendations', getFilmRecommendations);
-app.get('/', (req, res) => {
-  res.send('buggah')
+app.get('*', (req, res) => {
+  res.status(404).json({
+    message: "key missing"
+  })
 })
 // ROUTE HANDLER
 function getFilmRecommendations(req, res) {
@@ -111,7 +113,16 @@ function getFilmRecommendations(req, res) {
     getReleaseDate = ''
 
   console.log(req.params.id);
+  console.log(req.query.limit);
   let filmId = req.params.id;
+  let offset = 1;
+  let limit = 10;
+  if (req.query.limit) {
+    limit = req.query.limit
+  }
+  if (req.query.offset){
+    offset = req.query.offset
+  }
   Film.findById(req.params.id).then(data => {
     console.log(typeof(data.release_date), typeof(new Date()));
     getGenre = data.genre_id;
@@ -119,6 +130,7 @@ function getFilmRecommendations(req, res) {
     getReleaseYearPlus = getReleaseDate.setFullYear(getReleaseDate.getFullYear() + 15);
     getReleaseYearMinus = getReleaseDate.setFullYear(getReleaseDate.getFullYear() - 30);
   }).then(data => {
+
     Film.findAll({
       where: {
         genre_id: getGenre,
@@ -129,63 +141,56 @@ function getFilmRecommendations(req, res) {
           }
         }
       },
-      offset: 1,
-      limit: 10
+      offset: +offset,
+      limit: +limit
     }).then(data => {
       for (let i = 0; i < data.length; i++) {
         let getDate = (new Date(data[i].release_date));
         if (getDate < (new Date(getReleaseYearPlus)) || getDate < (new Date(getReleaseYearPlus))) {
           request(`${url}?films=${data[i].id}`, function(error, response, body) {
-            let reviewsAll = JSON.parse(body)
-            let ratingCounter = 0,
-                recommendedGenre = '',
-                recommendedTitle = '',
-                recommendedReviewsCount= '',
-                recommendedAvgRating= 0
-            for(let j = 0; j < reviewsAll.length; j++){
-              // console.log(reviewsAll[j].film_id);
-
-              recommendedReviewsCount = reviewsAll[j].reviews.length
-              for(let k = 0; k < reviewsAll[j].reviews.length; k++){
-                ratingCounter += reviewsAll[j].reviews[k].rating
-              }
-              recommendedAvgRating = ratingCounter / reviewsAll[j].reviews.length
-              if (recommendedAvgRating > 4 && recommendedReviewsCount >= 5) {
-                Film.findById(reviewsAll[j].film_id).then(data2 => {
-                  recommendedTitle = data2.title
-                  Genre.findById(data2.genre_id).then(data3 => {
-                    recommendedGenre = data3.name
-                    console.log(data[i].id);
-                    console.log(recommendedTitle);
-                    console.log(data[i].release_date);
-                    console.log(recommendedGenre);
-                    console.log(recommendedAvgRating);
-                    console.log(recommendedReviewsCount);
-                    res.json({
-                      recommendations: {
-                        id: data[i].id,
-                        title: recommendedTitle,
-                        releaseDate: data[i].release_date,
-                        genre: recommendedGenre,
-                        averageRating: recommendedAvgRating,
-                        reviews:recommendedReviewsCount
-                      },
-                      meta: {
-                        limit: 10,
-                        offset: 1
-                      }
-                    })
-                  })
-                })
-              }
-            }
+            Film.all({
+              attributes: [
+                'id', 'title', 'release_date'
+              ],
+              where: {
+                id: { in: data[i].id
+                }
+              },
+              order: ['id'],
+              limit: 3
+            })
+              .then(filmRec => {
+              const mapped = filmRec.map(film => {
+                if (film.averageRating >= 4 && film.reviews > 5) {
+                  return film.id;
+                } else {
+                  return errorMessage;
+                }
+                return {
+                  id: mapped[0].film,
+                  title: film.title,
+                  releaseDate: film.release_date,
+                  genre: genre.name,
+                  averageRating: film.average_rating,
+                  reviews: mapped[0].reviews
+                }
+              })
+              res.json({
+                recommendations: mapped,
+                meta: {
+                  limit: 10,
+                  offset: 1
+                }
+              });
+            }).catch(err => {
+              res.status(500).json(err);
+            });
 
           })
         }
       }
     })
-
-    // res.send('hello')
+// res.send('hello')
   })
 }
 
